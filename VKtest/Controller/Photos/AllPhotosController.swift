@@ -24,9 +24,10 @@ class AllPhotosController: UICollectionViewController, UICollectionViewDelegateF
         
         DispatchQueue.global().async {
             self.photosNetworkService.getAll(ownerId: self.ownerId) { [weak self] response in
-                self?.allPhotos = response
+                guard let self = self else { return }
+                self.allPhotos = response
                 DispatchQueue.main.async {
-                    self?.collectionView.reloadData()
+                    self.collectionView.reloadData()
                 }
             }
         }

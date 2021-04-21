@@ -14,7 +14,9 @@ class UserGroupsController: UITableViewController {
     private var userGroups = [GroupsGet]() // Results<GroupsGet>?
 //    private var token: NotificationToken?
     
-    let groupsNetworkService = GroupsNetworkService()
+//    let groupsNetworkService = GroupsNetworkService()
+    private let groupNSAdapter = GroupsNSAdapter()
+    lazy var avatarCacheService = AvatarCacheService(container: tableView)
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -26,10 +28,18 @@ class UserGroupsController: UITableViewController {
 //        loadData()
 //        realmNotifications()
         
-        groupsNetworkService.get { [weak self] results in
-            self?.userGroups = results.items
+//        groupsNetworkService.get { [weak self] results in
+//            self?.userGroups = results.items
+//            DispatchQueue.main.async {
+//                self?.tableView.reloadData()
+//            }
+//        }
+        
+        groupNSAdapter.get { [weak self] results in
+            guard let self = self else { return }
+            self.userGroups = results.items
             DispatchQueue.main.async {
-                self?.tableView.reloadData()
+                self.tableView.reloadData()
             }
         }
     }
@@ -85,7 +95,9 @@ class UserGroupsController: UITableViewController {
 //                    } catch {
 //                        print(error)
 //                    }
-                    groupsNetworkService.join(groupId: newGroup.id)
+                    
+//                    groupsNetworkService.join(groupId: newGroup.id)
+                    groupNSAdapter.join(groupId: newGroup.id)
                     tableView.reloadData()
                 } else {
                     print("Add group error")
@@ -105,28 +117,17 @@ class UserGroupsController: UITableViewController {
                 
         cell.nameLabel.text = userGroups[indexPath.row].name
         
-        if let url = URL(string: userGroups[indexPath.row].photo50) {
-            DispatchQueue.global().async {
-                AF.download(url, method: .get).responseData { response in
-                    guard let data = response.value else { return }
-                    DispatchQueue.main.async {
-                        let avatar = UIImage(data: data)
-                        cell.avatar.image = avatar
-                        cell.avatar.layer.cornerRadius = cell.avatar.frame.size.width / 2
-                        cell.avatar.clipsToBounds = true
-                        cell.avatar.contentMode = .scaleAspectFill
-                        cell.avatar.translatesAutoresizingMaskIntoConstraints = false
-                    }
-                }
-            }
-        }
+        let url = userGroups[indexPath.row].photo50
+        cell.avatar.image = avatarCacheService.getAvatar(indexPath: indexPath, url: url)
+        
         return cell
     }
     
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         let group = userGroups[indexPath.row]
         if editingStyle == .delete {
-            groupsNetworkService.leave(groupId: group.id)
+//            groupsNetworkService.leave(groupId: group.id)
+            groupNSAdapter.leave(groupId: group.id)
             tableView.reloadData()
 //            do {
 //                let realm = try Realm()

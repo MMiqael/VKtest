@@ -33,11 +33,12 @@ class ProfileController: UITableViewController {
         
         usersNetworkService.get { [weak self] response in
 //            self?.loadData()
+            guard let self = self else { return }
             DispatchQueue.main.async {
-            self?.profileItems = response
+            self.profileItems = response
             print("Response: \(response)")
-            print("ProfileItems?: \(String(describing: self?.profileItems))")
-                self?.tableView.reloadData()
+            print("ProfileItems?: \(String(describing: self.profileItems))")
+                self.tableView.reloadData()
             }
         }
         print("ProfileItems: \(profileItems)")

@@ -15,6 +15,7 @@ class NewsfeedController: UITableViewController {
 //    var newsProfile: [NewsfeedGetProfiles] = []
 //    var newsGroups: [NewsfeedGetGroups] = []
     let newsfeedNetworkService = NewsfeedNetworkService()
+    lazy var avatarCacheService = AvatarCacheService(container: tableView)
     
     var news: [NewsStruct] = []
     
@@ -32,10 +33,11 @@ class NewsfeedController: UITableViewController {
                 //            self?.newsItems = response.items
                 //            self?.newsProfile = response.profiles
                 //            self?.newsGroups = response.groups
-                self?.news = response
+                guard let self = self else { return }
+                self.news = response
                 
                 DispatchQueue.main.async {
-                    self?.tableView.reloadData()
+                    self.tableView.reloadData()
                 }
             }
         }
@@ -62,23 +64,8 @@ class NewsfeedController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EnumReuseIdentifiers.newsFeedCell.rawValue, for: indexPath) as? NewsfeedCell else {fatalError("Unable to creare explore table view cell")}
         
-        if let avatarUrl = URL(string: news[indexPath.row].avatar) {
-            DispatchQueue.global().async {
-                AF.download(avatarUrl, method: .get).responseData { response in
-                    guard let data = response.value else { return }
-//                    print("GLOBAL")
-                    DispatchQueue.main.async {
-                        let avatar = UIImage(data: data)
-                        cell.avatar.image = avatar
-                        cell.avatar.layer.cornerRadius = cell.avatar.frame.size.width / 2
-                        cell.avatar.clipsToBounds = true
-                        cell.avatar.contentMode = .scaleAspectFill
-                        cell.avatar.translatesAutoresizingMaskIntoConstraints = false
-//                        print("MAIN")
-                    }
-                }
-            }
-        }
+        let url = news[indexPath.row].avatar
+        cell.avatar.image = avatarCacheService.getAvatar(indexPath: indexPath, url: url)
         
         cell.nameLabel.text = news[indexPath.row].name
         cell.timeLabel.text = news[indexPath.row].date

@@ -18,10 +18,10 @@ class FriendsController: UITableViewController {
 //    private let friendsNetworkService = FriendsNetworkService()
     private let proxyFriendsNetworkService = ProxyFriendsNetworkService(networkService: FriendsNetworkService())
     
-    private var news: [PostNews] = []
+//    private var news: [PostNews] = []
     
     private var isSearching = false
-    private var timer: Timer?
+    lazy var avatarCacheService = AvatarCacheService(container: tableView)
     
     @IBOutlet weak var searchBar: UISearchBar!
     
@@ -44,10 +44,11 @@ class FriendsController: UITableViewController {
         
         DispatchQueue.global().async {
             self.proxyFriendsNetworkService.get { [weak self] response in
-                self?.friends = response.items
-                self?.friendsCount = response.count
+                guard let self = self else { return }
+                self.friends = response.items
+                self.friendsCount = response.count
                 DispatchQueue.main.async {
-                    self?.tableView.reloadData()
+                    self.tableView.reloadData()
                 }
             }
         }
@@ -89,45 +90,17 @@ class FriendsController: UITableViewController {
                 
         if isSearching {
             cell.nameLabel.text = sortedFriends[indexPath.row].fullName
-            cell.nameLabel.adjustsFontSizeToFitWidth = true
-            cell.nameLabel.minimumScaleFactor = 0.5
             
-            if let url = URL(string: sortedFriends[indexPath.row].photo50) {
-                DispatchQueue.global().async {
-                    AF.download(url, method: .get).responseData { response in
-                        guard let data = response.value else { return }
-                        DispatchQueue.main.async {
-                            let avatar = UIImage(data: data)
-                            cell.avatar.image = avatar
-                            cell.avatar.layer.cornerRadius = cell.avatar.frame.size.width / 2
-                            cell.avatar.clipsToBounds = true
-                            cell.avatar.contentMode = .scaleAspectFill
-                            cell.avatar.translatesAutoresizingMaskIntoConstraints = false
-                        }
-                    }
-                }
-            }
+            let url = sortedFriends[indexPath.row].photo50
+            cell.avatar.image = avatarCacheService.getAvatar(indexPath: indexPath, url: url)
+            
         } else {
             cell.nameLabel.text = friends[indexPath.row].fullName
-            cell.nameLabel.adjustsFontSizeToFitWidth = true
-            cell.nameLabel.minimumScaleFactor = 0.5
-            
-            if let url = URL(string: friends[indexPath.row].photo50) {
-                DispatchQueue.global().async {
-                    AF.download(url, method: .get).responseData { response in
-                        guard let data = response.value else { return }
-                        DispatchQueue.main.async {
-                            let avatar = UIImage(data: data)
-                            cell.avatar.image = avatar
-                            cell.avatar.layer.cornerRadius = cell.avatar.frame.size.width / 2
-                            cell.avatar.clipsToBounds = true
-                            cell.avatar.contentMode = .scaleAspectFill
-                            cell.avatar.translatesAutoresizingMaskIntoConstraints = false
-                        }
-                    }
-                }
-            }
+
+            let url = friends[indexPath.row].photo50
+            cell.avatar.image = avatarCacheService.getAvatar(indexPath: indexPath, url: url)
         }
+        
         return cell
     }
     

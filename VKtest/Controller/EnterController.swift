@@ -11,7 +11,7 @@ import Firebase
 class EnterController: UIViewController {
     
     private var handle: AuthStateDidChangeListenerHandle!
-        
+    
     private var gradient: CAGradientLayer!
     
     @IBOutlet weak var scrollView: UIScrollView!

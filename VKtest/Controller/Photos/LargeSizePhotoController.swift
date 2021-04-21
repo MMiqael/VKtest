@@ -36,9 +36,10 @@ class LargeSizePhotoController: UICollectionViewController, UICollectionViewDele
 //        loadData()
         
         photosNetworkService.getAll(ownerId: ownerId) { [weak self] response in
-            self?.largeSizePhotos = response
+            guard let self = self else { return }
+            self.largeSizePhotos = response
             DispatchQueue.main.async {
-                self?.collectionView.reloadData()
+                self.collectionView.reloadData()
             }
         }
     }

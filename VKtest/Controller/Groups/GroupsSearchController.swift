@@ -8,12 +8,16 @@
 import UIKit
 import Alamofire
 
+// MARK: При быстром наборе текста приложение падает
+
 class SearchGroupsController: UITableViewController {
     
     var searchGroups = [GroupsGet]()
-    private let groupsNetworkService = GroupsNetworkService()
+//    private let groupsNetworkService = GroupsNetworkService()
+    private let groupNSAdapter = GroupsNSAdapter()
+    lazy var avatarCacheService = AvatarCacheService(container: tableView)
     
-    private var timer: Timer?
+//    private var timer: Timer?
     
     @IBOutlet weak var searchBar: UISearchBar!
     
@@ -36,27 +40,11 @@ class SearchGroupsController: UITableViewController {
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         guard let cell = tableView.dequeueReusableCell(withIdentifier: EnumReuseIdentifiers.searchGroupsCell.rawValue, for: indexPath) as? SearchGroupsCell else {fatalError("Unable to creare explore table view cell")}
         
-        let index = searchGroups[indexPath.row]
+        cell.nameLabel.text = searchGroups[indexPath.row].name
         
-        cell.nameLabel.text = index.name
+        let url = searchGroups[indexPath.row].photo50
+        cell.avatar.image = avatarCacheService.getAvatar(indexPath: indexPath, url: url)
         
-        if let url = URL(string: index.photo50) {
-            DispatchQueue.global().async {
-                AF.download(url, method: .get).responseData { response in
-                    guard let data = response.value else { return }
-                    DispatchQueue.main.async {
-                        let avatar = UIImage(data: data)
-                        cell.avatar.image = avatar
-                        cell.avatar.layer.cornerRadius = cell.avatar.frame.size.width / 2
-                        cell.avatar.clipsToBounds = true
-                        cell.avatar.contentMode = .scaleAspectFill
-                        cell.avatar.layer.borderColor = UIColor.black.withAlphaComponent(0.5).cgColor
-                        cell.avatar.layer.borderWidth = 0.3
-                        cell.avatar.translatesAutoresizingMaskIntoConstraints = false
-                    }
-                }
-            }
-        }
     return cell
 }
     
@@ -92,10 +80,18 @@ extension SearchGroupsController: UISearchBarDelegate {
         //        }
         
         if !searchText.isEmpty {
-            groupsNetworkService.search(by: searchText) { [weak self] group in
-                self?.searchGroups = group.items
+//            groupsNetworkService.search(by: searchText) { [weak self] group in
+//                self?.searchGroups = group.items
+//                DispatchQueue.main.async() {
+//                    self?.tableView.reloadData()
+//                }
+//            }
+            
+            groupNSAdapter.search(by: searchText) { [weak self] group in
+                guard let self = self else { return }
+                self.searchGroups = group.items
                 DispatchQueue.main.async() {
-                    self?.tableView.reloadData()
+                    self.tableView.reloadData()
                 }
             }
         } else if searchText == "" {
